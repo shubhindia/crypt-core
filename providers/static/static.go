@@ -1,4 +1,4 @@
-package providers
+package static
 
 import (
 	"crypto/aes"
