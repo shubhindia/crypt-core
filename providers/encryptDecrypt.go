@@ -30,7 +30,7 @@ func EncryptAndEncode(value string, provider string) (string, error) {
 		if keyPhrase == "" {
 			return "", fmt.Errorf("keyphrase not found")
 		}
-		staticDecodeAndDecrypt(value, keyPhrase)
+		staticEncryptAndEncode(value, keyPhrase)
 
 	}
 	return "", nil
