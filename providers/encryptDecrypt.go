@@ -5,20 +5,25 @@ import (
 	"os"
 )
 
-func DecodeAndDecrypt(encoded string, provider string) ([]byte, error) {
+func DecodeAndDecrypt(encoded string, provider string) (string, error) {
 
 	switch provider {
 
 	case "static":
 		keyPhrase := os.Getenv("KEYPHRASE")
 		if keyPhrase == "" {
-			return nil, fmt.Errorf("keyphrase not found")
+			return "", fmt.Errorf("keyphrase not found")
 		}
-		staticDecodeAndDecrypt(encoded, keyPhrase)
+
+		decoded, err := staticDecodeAndDecrypt(encoded, keyPhrase)
+		if err != nil {
+			return "", err
+		}
+		return decoded, nil
 
 	}
 
-	return nil, nil
+	return "", nil
 
 }
 
@@ -30,7 +35,7 @@ func EncryptAndEncode(value string, provider string) (string, error) {
 		if keyPhrase == "" {
 			return "", fmt.Errorf("keyphrase not found")
 		}
-		staticEncryptAndEncode(value, keyPhrase)
+		return staticEncryptAndEncode(value, keyPhrase)
 
 	}
 	return "", nil

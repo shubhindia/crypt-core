@@ -6,30 +6,32 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"io"
-	"log"
 
 	"github.com/shubhindia/crypt-core/providers/utils"
 )
 
-func staticDecodeAndDecrypt(encoded string, keyPhrase string) []byte {
+func staticDecodeAndDecrypt(encoded string, keyPhrase string) (string, error) {
 	ciphered, _ := base64.StdEncoding.DecodeString(encoded)
 	hashedPhrase := utils.MdHashing(keyPhrase)
+
 	aesBlock, err := aes.NewCipher([]byte(hashedPhrase))
 	if err != nil {
-		log.Fatalln(err)
+		return "", err
 	}
+
 	gcmInstance, err := cipher.NewGCM(aesBlock)
 	if err != nil {
-		log.Fatalln(err)
+		return "", err
 	}
+
 	nonceSize := gcmInstance.NonceSize()
 	nonce, cipheredText := ciphered[:nonceSize], ciphered[nonceSize:]
-
 	originalText, err := gcmInstance.Open(nil, nonce, cipheredText, nil)
 	if err != nil {
-		log.Fatalln(err)
+		return "", err
 	}
-	return originalText
+
+	return string(originalText), nil
 
 }
 
