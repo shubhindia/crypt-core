@@ -1,4 +1,4 @@
-package static
+package providers
 
 import (
 	"crypto/aes"
@@ -11,7 +11,7 @@ import (
 	"github.com/shubhindia/crypt-core/providers/utils"
 )
 
-func DecodeAndDecrypt(encoded string, keyPhrase string) []byte {
+func staticDecodeAndDecrypt(encoded string, keyPhrase string) []byte {
 	ciphered, _ := base64.StdEncoding.DecodeString(encoded)
 	hashedPhrase := utils.MdHashing(keyPhrase)
 	aesBlock, err := aes.NewCipher([]byte(hashedPhrase))
@@ -33,7 +33,7 @@ func DecodeAndDecrypt(encoded string, keyPhrase string) []byte {
 
 }
 
-func EncryptAndEncode(value string, keyPhrase string) (string, error) {
+func staticEncryptAndEncode(value string, keyPhrase string) (string, error) {
 
 	aesBlock, err := aes.NewCipher([]byte(utils.MdHashing(keyPhrase)))
 	if err != nil {
