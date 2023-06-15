@@ -3,7 +3,6 @@ package utils
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -36,14 +35,11 @@ func GetKubeClient() (*kubernetes.Clientset, error) {
 		return clientset, nil
 	}
 
-	var kubeconfig *string
 	home := homedir.HomeDir()
-	kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-
-	flag.Parse()
+	kubeconfig := filepath.Join(home, ".kube", "config")
 
 	// Build the client configuration from the provided kubeconfig file
-	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build client configuration: %v", err)
 	}
