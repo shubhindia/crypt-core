@@ -6,7 +6,8 @@ import (
 	"os"
 
 	"github.com/shubhindia/crypt-core/providers/utils"
-	secretsv1alpha1 "github.com/shubhindia/cryptctl/apis/secrets/v1alpha1"
+
+	secretsv1alpha1 "github.com/shubhindia/encrypted-secrets/api/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
