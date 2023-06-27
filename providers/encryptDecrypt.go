@@ -2,9 +2,13 @@ package providers
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"os"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/kms"
 	"github.com/shubhindia/crypt-core/providers/utils"
 
 	secretsv1alpha1 "github.com/shubhindia/encrypted-secrets/api/v1alpha1"
@@ -84,6 +88,29 @@ func DecodeAndDecrypt(encryptedSecret *secretsv1alpha1.EncryptedSecret) (*secret
 
 		return decryptedSecret, nil
 
+	case "kms":
+		// credentials from the shared credentials file ~/.aws/credentials.
+		sess, err := session.NewSession(&aws.Config{
+			Region: aws.String("us-east-1")},
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		// Create KMS service client
+		svc := kms.New(sess)
+		for key, value := range encryptedSecret.Data {
+			ciphered, _ := base64.StdEncoding.DecodeString(value)
+			decoded, err := svc.Decrypt(&kms.DecryptInput{CiphertextBlob: ciphered})
+			if err != nil {
+				return nil, err
+			}
+			decryptedMap[key] = string(decoded.Plaintext)
+		}
+		decryptedSecret.Data = decryptedMap
+
+		return decryptedSecret, nil
+
 	}
 
 	return nil, nil
@@ -108,6 +135,7 @@ func EncryptAndEncode(decryptedSecret secretsv1alpha1.DecryptedSecret) (*secrets
 	encryptedMap := make(map[string]string)
 
 	switch provider {
+	// static key encryption
 	case "static":
 		keyPhrase := os.Getenv("KEYPHRASE")
 		if keyPhrase == "" {
@@ -124,6 +152,7 @@ func EncryptAndEncode(decryptedSecret secretsv1alpha1.DecryptedSecret) (*secrets
 		encryptedSecret.Data = encryptedMap
 		return encryptedSecret, nil
 
+	// k8s service account token encryption
 	case "k8s":
 		k8sClient, err := utils.GetKubeClient()
 		if err != nil {
@@ -154,6 +183,33 @@ func EncryptAndEncode(decryptedSecret secretsv1alpha1.DecryptedSecret) (*secrets
 
 			}
 			encryptedMap[key] = encrypted
+		}
+		encryptedSecret.Data = encryptedMap
+		return encryptedSecret, nil
+
+	// aws kms encryption
+	case "kms":
+		// credentials from the shared credentials file ~/.aws/credentials.
+		sess, err := session.NewSession(&aws.Config{
+			Region: aws.String("us-east-1")},
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		// Create KMS service client
+		svc := kms.New(sess)
+
+		for key, value := range decryptedSecret.Data {
+			encrypted, err := svc.Encrypt(&kms.EncryptInput{
+				KeyId:     aws.String("alias/cryptctl-key"),
+				Plaintext: []byte(value),
+			})
+			if err != nil {
+				return nil, err
+			}
+
+			encryptedMap[key] = base64.StdEncoding.EncodeToString(encrypted.CiphertextBlob)
 		}
 		encryptedSecret.Data = encryptedMap
 		return encryptedSecret, nil
